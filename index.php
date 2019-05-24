@@ -90,7 +90,7 @@
 		<div class="row">
 			<div class="col-md-4 col-xs-10 col-sm-8 panel panel-default centered">
 				<h1 class="margin-big-vertical"><center>Acemap Search</center></h1>
-				<form action="/search.php" id="queryForm">
+				<form action="./search.php" id="queryForm">
 					<div class="margin-base-vertical">
 			    		<label>Paper Title:</label>
 			    		<input type="text" class="form-control margin-base-vertical" name="paper_title" id="paper_title" " placeholder="Enter Paper Title">

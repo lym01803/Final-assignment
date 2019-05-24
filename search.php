@@ -51,12 +51,114 @@
 		    left: 50%;
 		    transform: translate(-50%, 0);
 		}
-
+		.side_area{
+			border: 1px solid #eeeeee;
+        	background-color: #eeeeee;
+        	width: 3%;
+        	height: 100%;
+        	position: absolute;
+        	top: 0%;
+		}
 	</style>
 </head>
-
+<script src="//libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
+<script>
+	var global_start = 0;
+	var global_rows = 10;
+	var global_is_finalpage = 0;
+	var global_field;
+	var global_value;
+	function show_table(){
+		$.ajax({
+			type: "POST",
+            async: "false",
+            url: "./search_solr.php",
+            dataType: "json",
+            data: {
+				"field":global_field,
+				"value":global_value,
+				"start":global_start,
+				"rows":global_rows,
+            },
+            success: function(msg) {
+                to_show(msg);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                console.log("Error!" + " " + XMLHttpRequest.status + " " + XMLHttpRequest.readyState + " " + textStatus);
+            }
+		});
+	}
+	function to_show(msg){
+		//console.log("toshow");
+		var htmlstr = "";
+		htmlstr += "<h1>Search Results</h1>\
+		<center><table class=\"table table-hover component tablesorter tablesorter-default tablesortere5cb36a9e7829\">\
+		<thead><tr><th>Title</th><th>Authors</th><th>Conference</th></tr></thead><tbody>";
+		if(!msg.hasOwnProperty("response") || !msg["response"].hasOwnProperty("docs")){
+			global_is_finalpage = 1;
+			if(global_start >= global_rows){
+				global_start -= global_rows;
+			}
+			return false;
+		}
+		global_is_finalpage = msg["response"]["docs"].length < global_rows;
+		for(var idx in msg["response"]["docs"]){
+			var paper = msg["response"]["docs"][idx];
+			htmlstr += "<tr><td>" + paper["PaperName"] + "</td><td>";
+			var authorname = paper["AuthorsName"];
+			for(var i = 0; i < authorname.length; i++){
+				var authorid = paper["AuthorsID"][i];
+				htmlstr += "<a href=\"/author.php?author_id=" + authorid + "\">" + authorname[i] + ";</a>";
+			}
+			htmlstr += "</td><td>" + paper["ConferenceName"] + "</td></tr>";
+		}
+		htmlstr += "</tbody></table></center><br/><br/>";
+		//console.log(htmlstr);
+		document.getElementById("table_div").innerHTML = htmlstr;
+	}
+	$(document).ready(function(){
+		$("#table_div").mousemove(function(event){
+			var mousex = event.clientX;
+			var mousey = event.clientY;//鼠标坐标
+			var item = document.getElementById("table_div");
+			var top = item.getBoundingClientRect().top;
+			var bottom = item.getBoundingClientRect().bottom;
+			var left = item.getBoundingClientRect().left;
+			var right = item.getBoundingClientRect().right;
+			var width = right - left;//表格div边界
+			var type = "default";
+			$("#table_div").unbind("click");
+			if(mousey >= top && mousey <= bottom){
+				if(mousex >= left && mousex <= left + 0.1*width){
+					if(global_start >= global_rows){
+						type = "url(./image/leftarrow.png),auto";
+						$("#table_div").click(function(){
+							if(global_start < global_rows){
+								return false;
+							}
+							global_start -= global_rows;
+							show_table();
+						});
+					}
+				}else if(mousex <= right && mousex >= right - 0.1*width){
+					type = "url(./image/rightarrow.png),auto";
+					if(!global_is_finalpage){
+						$("#table_div").click(function(){
+							if(global_is_finalpage){
+								return false;
+							}
+							global_start += global_rows;
+							show_table();
+						});
+					}
+				}
+				$(this).css({cursor:type});
+			}
+		});
+	});
+</script>
 <body>
-	<div class="container">
+	<div class="container" id="out_container">
 	<?php
 
 	//----------------------------------
@@ -111,7 +213,7 @@
 	    curl_close( $ch );
 	    return $response;
 	}
-
+/*
 	$url = "https://ssl.captcha.qq.com/ticket/verify";
 	$params = array(
 	    "aid" => $appid,
@@ -136,151 +238,20 @@
 	}else{
 	    echo "请求失败";
 	}
-
+*/
 	?>
-
-	<?php
-		$paper_title = $_GET["paper_title"];
-		$authorquery = $_GET["author"];
-		if($verified) {
-	?>
+	<script>
+		var verified = 1;<?php //echo $verified; ?>;
+		global_field = "<?php if(array_key_exists("field", $_GET)){echo $_GET["field"];}else{echo "PaperName";} ?>";
+		global_value = "<?php if(array_key_exists("value", $_GET)){echo $_GET["value"];}else{echo "";}?>";
+		if(verified){
+			show_table();
+		}
+	</script>
 			<div class="row">
-			<div class="col-md-8 col-xs-12 col-sm-8 panel panel-default centered">
-				<h1>Search Results</h1>
-	<?php
-			if ($paper_title) {
-				echo "Search for Title: ".$paper_title;
-				$ch = curl_init();
-				$timeout = 5;
-				$query = urlencode(str_replace(' ', '+', $paper_title));
-				$url = "http://127.0.0.1:8983/solr/ee101_core_1/select?indent=on&q=PaperName:".$query."&wt=json";
-
-				curl_setopt ($ch, CURLOPT_URL, $url);
-				curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-				$result = json_decode(curl_exec($ch), true);
-				curl_close($ch);
-	?>
-			<center><table class="table table-hover component tablesorter tablesorter-default tablesortere5cb36a9e7829"><thead><tr><th>Title</th><th>Authors</th><th>Conference</th></tr></thead><tbody>
-	<?php
-				foreach ($result['response']['docs'] as $paper) {
-					echo "<tr>";
-					echo "<td>";
-					echo $paper['PaperName'];
-					echo "</td>";
-
-					echo "<td>";
-					foreach ($paper['AuthorsName'] as $idx => $author) {
-						$author_id = $paper['AuthorsID'][$idx];
-						echo "<a href=\"/author.php?author_id=$author_id\">$author; </a>";
-					}
-					echo "</td>";
-
-					# 请补充针对Conference Name的显示
-					echo "<td>";
-					echo $paper['ConferenceName'];
-					echo "</td>";
-
-					echo "</tr>";
-				}
-				echo "</tbody></table></center><br><br>";
-			}
-		
-		}
-
-		# 请补充针对AuthorName以及ConferenceName的搜索
-	?>
-
-	<?php
-		$authorquery = $_GET["author"];
-		if($verified) {
-			if ($authorquery) {
-				echo "Search for Author: ".$authorquery;
-				$ch = curl_init();
-				$timeout = 5;
-				$query = urlencode(str_replace(' ', '+', $authorquery));
-				$url = "http://127.0.0.1:8983/solr/ee101_core_1/select?indent=on&q=AuthorsName:".$query."&wt=json";
-
-				curl_setopt ($ch, CURLOPT_URL, $url);
-				curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-				$result = json_decode(curl_exec($ch), true);
-				curl_close($ch);
-	?>
-			<center><table class="table table-hover component tablesorter tablesorter-default tablesortere5cb36a9e7829"><thead><tr><th>Title</th><th>Authors</th><th>Conference</th></tr></thead><tbody>
-	<?php
-				foreach ($result['response']['docs'] as $paper) {
-					echo "<tr>";
-					echo "<td>";
-					echo $paper['PaperName'];
-					echo "</td>";
-
-					echo "<td>";
-					foreach ($paper['AuthorsName'] as $idx => $author) {
-						$author_id = $paper['AuthorsID'][$idx];
-						echo "<a href=\"/author.php?author_id=$author_id\">$author; </a>";
-					}
-					echo "</td>";
-
-					# 请补充针对Conference Name的显示
-					echo "<td>";
-					echo $paper['ConferenceName'];
-					echo "</td>";
-
-					echo "</tr>";
-				}
-				echo "</tbody></table></center><br><br>";
-			}
-		
-		}
-		# 请补充针对AuthorName以及ConferenceName的搜索
-	?>
-
-	<?php
-		$confquery = $_GET["Conference"];
-		if($verified) {
-			if ($confquery) {
-				echo "Search for Conference: ".$confquery;
-				$ch = curl_init();
-				$timeout = 5;
-				$query = urlencode(str_replace(' ', '+', $confquery));
-				$url = "http://127.0.0.1:8983/solr/ee101_core_1/select?indent=on&q=ConferenceName:".$query."&wt=json";
-
-				curl_setopt ($ch, CURLOPT_URL, $url);
-				curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-				$result = json_decode(curl_exec($ch), true);
-				curl_close($ch);
-	?>
-			<center><table class="table table-hover component tablesorter tablesorter-default tablesortere5cb36a9e7829"><thead><tr><th>Title</th><th>Authors</th><th>Conference</th></tr></thead><tbody>
-	<?php
-				foreach ($result['response']['docs'] as $paper) {
-					echo "<tr>";
-					echo "<td>";
-					echo $paper['PaperName'];
-					echo "</td>";
-
-					echo "<td>";
-					foreach ($paper['AuthorsName'] as $idx => $author) {
-						$author_id = $paper['AuthorsID'][$idx];
-						echo "<a href=\"/author.php?author_id=$author_id\">$author; </a>";
-					}
-					echo "</td>";
-
-					# 请补充针对Conference Name的显示
-					echo "<td>";
-					echo $paper['ConferenceName'];
-					echo "</td>";
-
-					echo "</tr>";
-				}
-				echo "</tbody></table></center><br><br>";
-			}
-		
-		}
-		# 请补充针对AuthorName以及ConferenceName的搜索
-	?>
-</div></div>
+			<div class="col-md-8 col-xs-12 col-sm-8 panel panel-default centered" id="table_div">
+			</div></div>
+			
 </div>
 
 </body>

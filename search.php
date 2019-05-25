@@ -172,13 +172,15 @@
 		if(lower_bound <= 0){lower_bound = 1;}
 		var upper_bound = lower_bound + 9;
 		while(upper_bound * global_rows >= msg["response"]["numFound"] + 10){upper_bound--;}
+		str += "<ul class=\"pagination\">";
 		for(var i = lower_bound; i <= upper_bound; i++){
 			if(i == this_page){
-				str += "<a href=\"javascript:turn_page("+String(i)+")\" style=\"color:#aa00cc;\">"+String(i)+"</a>&nbsp&nbsp";
+				str += "<li class=\"active\"><a href=\"javascript:turn_page("+String(i)+")\">"+String(i)+"</a></li>";
 			}else{
-				str += "<a href=\"javascript:turn_page("+String(i)+")\">"+String(i)+"</a>&nbsp&nbsp";
+				str += "<li><a href=\"javascript:turn_page("+String(i)+")\">"+String(i)+"</a></li>";
 			}
 		}
+		str += "</ul>";
 		return str; 
 	}
 </script>

@@ -87,7 +87,8 @@
                 console.log("Error!" + " " + XMLHttpRequest.status + " " + XMLHttpRequest.readyState + " " + textStatus);
             }
 		});
-	}
+	}//ajax,显示表格部分。向search_solr.php发送json，并从该php接收返回的json对象。
+	//to_show函数根据返回的json对象msg显示表格。
 	function to_show(msg){
 		//console.log("toshow");
 		var htmlstr = "";
@@ -113,10 +114,12 @@
 			htmlstr += "</td><td>" + paper["ConferenceName"] + "</td></tr>";
 		}
 		htmlstr += "</tbody></table></center><br/><br/>";
+		htmlstr += turn_page_button(msg);
 		//console.log(htmlstr);
 		document.getElementById("table_div").innerHTML = htmlstr;
 	}
 	$(document).ready(function(){
+		//实现第一种翻页方式
 		$("#table_div").mousemove(function(event){
 			var mousex = event.clientX;
 			var mousey = event.clientY;//鼠标坐标
@@ -156,6 +159,28 @@
 			}
 		});
 	});
+	function turn_page(id){
+		var num = parseInt(id);
+		global_start = (num - 1) * 10;
+		show_table();
+	}
+	function turn_page_button(msg){
+		var str = "";
+		str += "Found " + msg["response"]["numFound"] + " results<br/>";
+		var this_page = global_start/global_rows + 1;
+		var lower_bound = this_page - 5;
+		if(lower_bound <= 0){lower_bound = 1;}
+		var upper_bound = lower_bound + 9;
+		while(upper_bound * global_rows >= msg["response"]["numFound"] + 10){upper_bound--;}
+		for(var i = lower_bound; i <= upper_bound; i++){
+			if(i == this_page){
+				str += "<a href=\"javascript:turn_page("+String(i)+")\" style=\"color:#aa00cc;\">"+String(i)+"</a>&nbsp&nbsp";
+			}else{
+				str += "<a href=\"javascript:turn_page("+String(i)+")\">"+String(i)+"</a>&nbsp&nbsp";
+			}
+		}
+		return str; 
+	}
 </script>
 <body>
 	<div class="container" id="out_container">
@@ -251,7 +276,6 @@
 			<div class="row">
 			<div class="col-md-8 col-xs-12 col-sm-8 panel panel-default centered" id="table_div">
 			</div></div>
-			
 </div>
 
 </body>

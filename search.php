@@ -2,10 +2,12 @@
 <html>
 <head>
 <title>Search Page</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<script src="//libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
     <!-- Bootstrap -->
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet" />
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet"/>
+	<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet" />
+	<script src="//netdna.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
 	<style>
 
 		/* http://css-tricks.com/perfect-full-page-background-image/ */
@@ -61,11 +63,11 @@
 		}
 	</style>
 </head>
-<script src="//libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
 <script>
 	var global_start = 0;
 	var global_rows = 10;
 	var global_is_finalpage = 0;
+	var global_max_page = 0;
 	var global_field;
 	var global_value;
 	function show_table(){
@@ -81,7 +83,8 @@
 				"rows":global_rows,
             },
             success: function(msg) {
-                to_show(msg);
+				to_show(msg);
+				$("[data-toggle='popover']").popover();//此句勿删,勿改动位置;html重写后,需要重新激活popover.
             },
             error: function(XMLHttpRequest, textStatus, errorThrown) {
                 console.log("Error!" + " " + XMLHttpRequest.status + " " + XMLHttpRequest.readyState + " " + textStatus);
@@ -95,6 +98,12 @@
 		htmlstr += "<h1>Search Results</h1>\
 		<center><table class=\"table table-hover component tablesorter tablesorter-default tablesortere5cb36a9e7829\">\
 		<thead><tr><th>Title</th><th>Authors</th><th>Conference</th></tr></thead><tbody>";
+		if(msg.hasOwnProperty("response")){
+			global_max_page = parseInt((parseInt(msg["response"]["numFound"])-1)/global_rows) + 1;
+		}
+		else{
+			global_max_page = 1;
+		}
 		if(!msg.hasOwnProperty("response") || !msg["response"].hasOwnProperty("docs")){
 			global_is_finalpage = 1;
 			if(global_start >= global_rows){
@@ -102,20 +111,23 @@
 			}
 			return false;
 		}
-		global_is_finalpage = msg["response"]["docs"].length < global_rows;
+		global_is_finalpage = parseInt(msg["response"]["numFound"]) <= (global_start + global_rows);
+		//console.log(global_start);
+		//console.log(global_rows);
+		//console.log(msg["response"]["numFound"]);
 		for(var idx in msg["response"]["docs"]){
 			var paper = msg["response"]["docs"][idx];
 			htmlstr += "<tr><td>" + paper["PaperName"] + "</td><td>";
 			var authorname = paper["AuthorsName"];
 			for(var i = 0; i < authorname.length; i++){
 				var authorid = paper["AuthorsID"][i];
-				htmlstr += "<a href=\"/author.php?author_id=" + authorid + "\">" + authorname[i] + ";</a>";
+				htmlstr += "<a href=\"/author.php?author_id=" + authorid + "\">" + authorname[i] + ";&nbsp;</a>";
 			}
 			htmlstr += "</td><td>" + paper["ConferenceName"] + "</td></tr>";
 		}
 		htmlstr += "</tbody></table></center><br/><br/>";
+		htmlstr += setting_button();
 		htmlstr += turn_page_button(msg);
-		//console.log(htmlstr);
 		document.getElementById("table_div").innerHTML = htmlstr;
 	}
 	$(document).ready(function(){
@@ -144,8 +156,8 @@
 						});
 					}
 				}else if(mousex <= right && mousex >= right - 0.1*width){
-					type = "url(./image/rightarrow.png),auto";
 					if(!global_is_finalpage){
+						type = "url(./image/rightarrow.png),auto";
 						$("#table_div").click(function(){
 							if(global_is_finalpage){
 								return false;
@@ -158,21 +170,38 @@
 				$(this).css({cursor:type});
 			}
 		});
+		//$("[data-toggle='popover']").popover();//此句可删
 	});
+	function gotopageclick(){
+		var page = parseInt(document.getElementById("to_page").value);
+		if(isNaN(page)){
+			page = parseInt(global_start/global_rows) + 1;
+		}else if(page < 1){
+			page = 1;
+		}else if(page > global_max_page){
+			page = global_max_page;
+		}
+		$("[data-toggle='popover']").popover("hide");
+		turn_page(page);
+	}
 	function turn_page(id){
-		var num = parseInt(id);
-		global_start = (num - 1) * 10;
+		if(isNaN(id)){
+			id = parseInt(id);
+		}
+		global_start = (id - 1) * global_rows;
 		show_table();
 	}
 	function turn_page_button(msg){
 		var str = "";
 		str += "Found " + msg["response"]["numFound"] + " results<br/>";
-		var this_page = global_start/global_rows + 1;
+		var this_page = parseInt(global_start/global_rows) + 1;
+		var max_page = parseInt((parseInt(msg["response"]["numFound"])-1)/global_rows) + 1;
 		var lower_bound = this_page - 5;
 		if(lower_bound <= 0){lower_bound = 1;}
 		var upper_bound = lower_bound + 9;
-		while(upper_bound * global_rows >= msg["response"]["numFound"] + 10){upper_bound--;}
-		str += "<ul class=\"pagination\">";
+		while(upper_bound * global_rows >= msg["response"]["numFound"] + global_rows){upper_bound--;}
+		str += "<ul class=\"pagination center-block\">";
+		str += "<li><a href=\"javascript:turn_page(1)\">&lt;&lt;</a></li>";
 		for(var i = lower_bound; i <= upper_bound; i++){
 			if(i == this_page){
 				str += "<li class=\"active\"><a href=\"javascript:turn_page("+String(i)+")\">"+String(i)+"</a></li>";
@@ -180,8 +209,44 @@
 				str += "<li><a href=\"javascript:turn_page("+String(i)+")\">"+String(i)+"</a></li>";
 			}
 		}
-		str += "</ul>";
+		str += "<li><a href=\"javascript:turn_page("+max_page+")\">&gt;&gt;</a></li></ul>";
 		return str; 
+	}
+	function pageitemschange(){
+		var sele = document.getElementById("pageitems");
+		global_rows = parseInt(sele.options[sele.selectedIndex].value);
+		global_start = parseInt(global_start / global_rows) * global_rows; 
+		$("[data-toggle='popover']").popover("hide");
+		show_table();
+	}
+	function setting_button(){
+		var selectstr = "";
+		var items=Array(10,15,20,25,30,50,75,100);
+		for(var i = 0; i < items.length; i++){
+			if(items[i] != parseInt(global_rows)){
+				selectstr += "<option value='"+String(items[i])+"'>"+String(items[i])+"</option>";
+			}else{
+				selectstr += "<option value='"+String(items[i])+"' selected>"+String(items[i])+"</option>";
+			}
+		}
+		var now_page = parseInt(global_start/global_rows) + 1;
+		return "<img src=\"./image/setting.svg\" width=\"30px\" class=\"btn popover-toggle\" style=\"padding:1px 1px 1px 1px;\" id=\"settingbutton\" title=\"\" data-container=\"body\" data-toggle=\"popover\" data-placement=\"auto\" data-original-title=\"setting\"\
+		data-html=\"true\" data-content=\"<select id='pageitems' onchange='pageitemschange();'>"+selectstr+"</select>&nbsp;items per page<hr/><button class='btn btn-default' id='gotopage' style='padding:3px 5px 3px 5px' onclick='gotopageclick();'>Go to</button>&nbsp;page&nbsp<input id='to_page' style='width:25%;' value='"+now_page+"'></input><hr/>\"/>\
+		&nbsp&nbsp";
+	}
+	window.onbeforeunload = function(){
+		sessionStorage.setItem("start", String(global_start));
+		sessionStorage.setItem("rows", String(global_rows));
+	}//事实证明,当想要用cookie的时候,可以先考虑一下用session,这玩意儿明显好用得多
+	function deal_with_session(){
+		var str = sessionStorage.getItem("start");
+		if(str != null && str != ""){
+			global_start = parseInt(str);
+		}
+		str = sessionStorage.getItem("rows");
+		if(str != null && str != ""){
+			global_rows = parseInt(str);
+		}
 	}
 </script>
 <body>
@@ -191,13 +256,13 @@
 	//----------------------------------
 	// 腾讯验证码后台接入demo
 	//----------------------------------
-	header('Content-type:text/html;charset=utf-8');
+	/*header('Content-type:text/html;charset=utf-8');
 	$verified = 0;
 	$AppSecretKey = "0DCUvhU_IXU1P2lYfz4EYQQ**"; //$_GET["AppSecretKey"]
 	$appid = "2094801839"; //$_GET["appid"]
 	$Ticket = $_GET["ticket"]; //$_GET["Ticket"]
 	$Randstr = $_GET["randstr"]; //$_GET["Randstr"]
-	$UserIP = "106.15.90.39"; //$_GET["UserIP"]
+	$UserIP = "106.15.90.39"; //$_GET["UserIP"]*/
 
 	/**
 	 * 请求接口返回内容
@@ -206,6 +271,7 @@
 	 * @param  int $ipost [是否采用POST形式]
 	 * @return  string
 	*/
+	/*
 	function txcurl($url,$params=false,$ispost=0){
 	    $httpInfo = array();
 	    $ch = curl_init();
@@ -239,7 +305,7 @@
 	    $httpInfo = array_merge( $httpInfo , curl_getinfo( $ch ) );
 	    curl_close( $ch );
 	    return $response;
-	}
+	}*/
 /*
 	$url = "https://ssl.captcha.qq.com/ticket/verify";
 	$params = array(
@@ -268,6 +334,7 @@
 */
 	?>
 	<script>
+		deal_with_session();
 		var verified = 1;<?php //echo $verified; ?>;
 		global_field = "<?php if(array_key_exists("field", $_GET)){echo $_GET["field"];}else{echo "PaperName";} ?>";
 		global_value = "<?php if(array_key_exists("value", $_GET)){echo $_GET["value"];}else{echo "";}?>";
@@ -276,7 +343,7 @@
 		}
 	</script>
 			<div class="row">
-			<div class="col-md-8 col-xs-12 col-sm-8 panel panel-default centered" id="table_div">
+			<div class="col-md-9 col-xs-12 col-sm-9 panel panel-default centered" id="table_div">
 			</div></div>
 </div>
 

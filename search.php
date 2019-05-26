@@ -70,6 +70,7 @@
 	var global_max_page = 0;
 	var global_field;
 	var global_value;
+	var global_usingquickturnpage = 1;
 	function show_table(){
 		$.ajax({
 			type: "POST",
@@ -93,6 +94,7 @@
 	}//ajax,显示表格部分。向search_solr.php发送json，并从该php接收返回的json对象。
 	//to_show函数根据返回的json对象msg显示表格。
 	function to_show(msg){
+		$("[data-toggle='popover']").popover("hide");
 		//console.log("toshow");
 		var htmlstr = "";
 		htmlstr += "<h1>Search Results</h1>\
@@ -133,6 +135,11 @@
 	$(document).ready(function(){
 		//实现第一种翻页方式
 		$("#table_div").mousemove(function(event){
+			//console.log(global_usingquickturnpage);
+			if(!global_usingquickturnpage){
+				$(this).css({cursor:'default'});
+				return ;
+			}
 			var mousex = event.clientX;
 			var mousey = event.clientY;//鼠标坐标
 			var item = document.getElementById("table_div");
@@ -181,7 +188,6 @@
 		}else if(page > global_max_page){
 			page = global_max_page;
 		}
-		$("[data-toggle='popover']").popover("hide");
 		turn_page(page);
 	}
 	function turn_page(id){
@@ -216,7 +222,10 @@
 		var sele = document.getElementById("pageitems");
 		global_rows = parseInt(sele.options[sele.selectedIndex].value);
 		global_start = parseInt(global_start / global_rows) * global_rows; 
-		$("[data-toggle='popover']").popover("hide");
+		show_table();
+	}
+	function usingQuickTurnPageChange(){
+		global_usingquickturnpage ^= 1;
 		show_table();
 	}
 	function setting_button(){
@@ -230,9 +239,10 @@
 			}
 		}
 		var now_page = parseInt(global_start/global_rows) + 1;
-		return "<img src=\"./image/setting.svg\" width=\"30px\" class=\"btn popover-toggle\" style=\"padding:1px 1px 1px 1px;\" id=\"settingbutton\" title=\"\" data-container=\"body\" data-toggle=\"popover\" data-placement=\"auto\" data-original-title=\"setting\"\
-		data-html=\"true\" data-content=\"<select id='pageitems' onchange='pageitemschange();'>"+selectstr+"</select>&nbsp;items per page<hr/><button class='btn btn-default' id='gotopage' style='padding:3px 5px 3px 5px' onclick='gotopageclick();'>Go to</button>&nbsp;page&nbsp<input id='to_page' style='width:25%;' value='"+now_page+"'></input><hr/>\"/>\
-		&nbsp&nbsp";
+		var checked = global_usingquickturnpage ? "checked" : "";
+		return "<img src=\"./image/setting.svg\" alt='Set' width=\"30px\" class=\"btn popover-toggle\" style=\"padding:1px 1px 1px 1px;\" id=\"settingbutton\" title=\"\" data-container=\"body\" data-toggle=\"popover\" data-placement=\"auto\" data-original-title=\"Settings\"\
+		data-html=\"true\" data-content=\"<select id='pageitems' onchange='pageitemschange();'>"+selectstr+"</select>&nbsp;items per page<hr/><button class='btn btn-default' id='gotopage' style='padding:3px 5px 3px 5px' onclick='gotopageclick();'>Go to</button>&nbsp;page&nbsp<input id='to_page' style='width:25%;' value='"+now_page+"'></input><hr/>\
+		<input id='quickturnpage' type='checkbox' onchange='usingQuickTurnPageChange()' style='zoom:150%;position:absolute;top:117px;'"+checked+"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Using quick page-turning<hr/>\"/>&nbsp&nbsp";
 	}
 	window.onbeforeunload = function(){
 		sessionStorage.setItem("start", String(global_start));

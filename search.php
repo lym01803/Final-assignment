@@ -8,6 +8,7 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet"/>
 	<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet" />
 	<script src="//netdna.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+	<script src="./js/echarts.min.js"></script>
 	<style>
 
 		/* http://css-tricks.com/perfect-full-page-background-image/ */
@@ -352,9 +353,35 @@
 			show_table();
 		}
 	</script>
-			<div class="row">
-			<div class="col-md-9 col-xs-12 col-sm-9 panel panel-default centered" id="table_div">
-			</div></div>
+		<div class="row">
+			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="table_div">
+			</div>
+			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0.5);height:300px;">
+			<script type="text/javascript">
+        		var myChart = echarts.init(document.getElementById('image_div'));
+        		var option = {
+            		title: {
+                		text: 'ECharts 入门示例'
+            		},
+            		tooltip: {},
+           			legend: {
+                		data:['销量']
+            		},
+            		xAxis: {
+                		data: ["衬衫","羊毛衫","雪纺衫","裤子","高跟鞋","袜子"]
+            		},
+            		yAxis: {},
+            		series: [{
+                		name: '销量',
+                		type: 'bar',
+                		data: [5, 20, 36, 10, 10, 20]
+            		}]
+        		};
+				// 使用刚指定的配置项和数据显示图表。
+        		myChart.setOption(option);
+			</script>
+			</div>
+		</div>
 </div>
 
 </body>

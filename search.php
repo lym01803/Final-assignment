@@ -347,7 +347,7 @@
 	<script>
 		deal_with_session();
 		var verified = 1;<?php //echo $verified; ?>;
-		global_field = "<?php if(array_key_exists("field", $_GET)){echo $_GET["field"];}else{echo "PaperName";} ?>";
+		global_field = "<?php if(array_key_exists("field", $_GET)){echo $_GET["field"];}else{echo "Paper_Author_Conference";} ?>";
 		global_value = "<?php if(array_key_exists("value", $_GET)){echo $_GET["value"];}else{echo "";}?>";
 		if(verified){
 			show_table();
@@ -356,29 +356,202 @@
 		<div class="row">
 			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="table_div">
 			</div>
-			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0.5);height:300px;">
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0.8);height:400px;">
 			<script type="text/javascript">
-        		var myChart = echarts.init(document.getElementById('image_div'));
-        		var option = {
-            		title: {
-                		text: 'ECharts 入门示例'
-            		},
-            		tooltip: {},
-           			legend: {
-                		data:['销量']
-            		},
-            		xAxis: {
-                		data: ["衬衫","羊毛衫","雪纺衫","裤子","高跟鞋","袜子"]
-            		},
-            		yAxis: {},
-            		series: [{
-                		name: '销量',
-                		type: 'bar',
-                		data: [5, 20, 36, 10, 10, 20]
-            		}]
-        		};
-				// 使用刚指定的配置项和数据显示图表。
-        		myChart.setOption(option);
+				$.ajax({
+					type: "POST",
+					async: "false",
+					url: "search_stat.php",
+					dataType: "json",
+					data: {
+						"field":global_field,
+						"value":global_value,
+						"partial":"Year",
+					},
+					success: function(msg) {
+						show_img(msg);
+					},
+					error: function(XMLHttpRequest, textStatus, errorThrown) {
+						alert("Error!" + XMLHttpRequest.status + XMLHttpRequest.readyState + textStatus);
+					}
+				});
+				function show_img(msg) {
+					var myChart = echarts.init(document.getElementById('image_div'));
+					var xdata=Array(), ydata=Array();
+					var idx = 0;
+					for(var year in msg){
+						if(year != "numFound" && parseInt(year) >= 1970){
+							ydata[idx] = year;
+							xdata[idx] = parseInt(msg[year]);
+							idx++;
+						}
+					}
+        			var option = {
+    					legend: {
+        					data:['Number of papers ---- Year']
+    					},
+    					toolbox: {
+        					show : true,
+        					feature : {
+            					mark : {show: true},
+            					dataView : {show: true, readOnly: false},
+            					magicType : {show: true, type: ['line', 'bar']},
+            					restore : {show: true},
+            					saveAsImage : {show: true}
+        					}
+    					},
+    					calculable : true,
+   	 					tooltip : {
+        					trigger: 'axis',
+        					formatter: "Year : {b}<br/>Number : {c}",
+    					},
+    					xAxis : [
+							{
+            					type : 'value',
+            					axisLabel : {
+                					formatter: function(value){
+										return value;
+									},
+								},
+							},
+    					],
+    					yAxis : [
+        					{
+            					type : 'category',
+            					axisLine : {onZero: false},
+            					axisLabel : {
+                					formatter: function(value){
+										return value;
+									},
+            					},
+            					boundaryGap : false,
+            					data : ydata,
+        					}
+    					],
+    					series : [
+        					{
+            					name:'Number of papers ---- Year',
+            					type:'bar',
+            					smooth:true,
+            					itemStyle: {
+                					normal: {
+										color: 'rgba(160,120,180,1)',
+                    					lineStyle: {
+											color: 'rgba(160,120,180,1)',
+                        					shadowColor : 'rgba(160,120,180,1)'
+										}
+                					}
+            					},
+            					data: xdata
+        					}
+    					]
+					};
+					// 使用刚指定的配置项和数据显示图表。
+					myChart.setOption(option);
+				}
+			</script>
+			</div>
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div2" style="background-color:rgba(255,255,255,0.8);height:400px;">
+			<script>
+				$.ajax({
+					type:"POST",
+					async:"false",
+					url:"search_stat.php",
+					dataType:"html",
+					data:{
+						"field":global_field,
+						"value":global_value,
+						"partial":"ConferenceName",
+					},
+					success: function(msg) {
+						show_img2(msg);
+					},
+					error: function(XMLHttpRequest, textStatus, errorThrown) {
+						alert("Error!" + XMLHttpRequest.status + XMLHttpRequest.readyState + textStatus);
+					}
+				});
+				function show_img2(msg){
+					var myChart = echarts.init(document.getElementById('image_div2'));
+					var xdata=Array(), ydata=Array();
+					var idx = 0;
+					for(var p in msg){
+						if(p != "numFound"){
+							xdata[idx] = p;
+							ydata[idx] = msg[p];
+							idx++;
+						}
+					}
+					option = {
+    					title: {
+        					text: '浏览器占比变化',
+        					subtext: '纯属虚构',
+        					top: 10,
+        					left: 10
+    					},
+    					tooltip: {
+        					trigger: 'item',
+        					backgroundColor : 'rgba(0,0,250,1.0)'
+    					},
+    					legend: {
+        					type: 'scroll',
+        					bottom: 10,
+        					data: (function (){
+            					var list = [];
+            					for (var i = 1; i <=28; i++) {
+                					list.push(i + 2000 + '');
+            					}
+            					return list;
+        					})()
+    					},
+    					visualMap: {
+        					top: 'middle',
+        					right: 10,
+        					color: ['red', 'yellow'],
+        					calculable: true
+    					},
+    					radar: {
+       						indicator : [
+           						{ text: 'IE8-', max: 400},
+           						{ text: 'IE9+', max: 400},
+           						{ text: 'Safari', max: 400},
+           						{ text: 'Firefox', max: 400},
+           						{ text: 'Chrome', max: 400}
+        					]
+    					},
+    					series : (function (){
+        					var series = [];
+        					for (var i = 1; i <= 28; i++) {
+            				series.push({
+                				name:'浏览器（数据纯属虚构）',
+                				type: 'radar',
+                				symbol: 'none',
+                				lineStyle: {
+                   					width: 1
+                				},
+                				emphasis: {
+                    				areaStyle: {
+                        				color: 'rgba(0,250,0,0.3)'
+                    				}
+                				},
+                				data:[
+                  					{
+                    					value:[
+                        					(40 - i) * 10,
+                        					(38 - i) * 4 + 60,
+                        					i * 5 + 10,
+                        					i * 9,
+                        					i * i /2
+                    					],
+                    					name: i + 2000 + ''
+                  					}
+                				]
+            				});
+        				}
+        				return series;
+    				})()
+				};
+				myChart.setOption(option);
+			}
 			</script>
 			</div>
 		</div>

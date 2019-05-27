@@ -2,7 +2,7 @@
     $field = $_POST["field"];
     $value = $_POST["value"];
     $partial = $_POST["partial"];
-    $str = urlencode($field.":".$value);
+    $str = urlencode(str_replace(' ','+',$field.":".$value));
     $ch = curl_init();
     $timeout = 10;
     $rows = 1048576;

@@ -356,7 +356,7 @@
 		<div class="row">
 			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="table_div">
 			</div>
-			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0.8);height:400px;">
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0.8);height:500px;">
 			<script type="text/javascript">
 				$.ajax({
 					type: "POST",
@@ -424,7 +424,7 @@
 										return value;
 									},
             					},
-            					boundaryGap : false,
+            					boundaryGap : true,
             					data : ydata,
         					}
     					],
@@ -435,10 +435,10 @@
             					smooth:true,
             					itemStyle: {
                 					normal: {
-										color: 'rgba(160,120,180,1)',
+										color: 'rgba(160,220,80,0.8)',
                     					lineStyle: {
-											color: 'rgba(160,120,180,1)',
-                        					shadowColor : 'rgba(160,120,180,1)'
+											color: 'rgba(160,220,80,0.8)',
+                        					shadowColor : 'rgba(160,220,80,0.8)'
 										}
                 					}
             					},
@@ -451,17 +451,16 @@
 				}
 			</script>
 			</div>
-			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div2" style="background-color:rgba(255,255,255,0.8);height:400px;">
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div2" style="background-color:rgba(255,255,255,0.8);height:500px;">
 			<script>
 				$.ajax({
-					type:"POST",
-					async:"false",
-					url:"search_stat.php",
-					dataType:"html",
-					data:{
+					type: "POST",
+					async: "false",
+					url: "search_stat2.php",
+					dataType: "json",
+					data: {
 						"field":global_field,
 						"value":global_value,
-						"partial":"ConferenceName",
 					},
 					success: function(msg) {
 						show_img2(msg);
@@ -471,85 +470,78 @@
 					}
 				});
 				function show_img2(msg){
-					var myChart = echarts.init(document.getElementById('image_div2'));
-					var xdata=Array(), ydata=Array();
-					var idx = 0;
-					for(var p in msg){
-						if(p != "numFound"){
-							xdata[idx] = p;
-							ydata[idx] = msg[p];
-							idx++;
+					var max_num = 0;
+					for(var i = 0; i < 6; i++){
+						if(parseInt(msg["num"][i]) + 3 > max_num){
+							max_num = parseInt(msg["num"][i]);
 						}
 					}
 					option = {
-    					title: {
-        					text: '浏览器占比变化',
-        					subtext: '纯属虚构',
-        					top: 10,
-        					left: 10
+    					title : {
+        					text: 'Number of papers ---- Conference',
     					},
-    					tooltip: {
-        					trigger: 'item',
-        					backgroundColor : 'rgba(0,0,250,1.0)'
-    					},
-    					legend: {
-        					type: 'scroll',
-        					bottom: 10,
-        					data: (function (){
-            					var list = [];
-            					for (var i = 1; i <=28; i++) {
-                					list.push(i + 2000 + '');
-            					}
-            					return list;
-        					})()
-    					},
-    					visualMap: {
-        					top: 'middle',
-        					right: 10,
-        					color: ['red', 'yellow'],
-        					calculable: true
-    					},
-    					radar: {
-       						indicator : [
-           						{ text: 'IE8-', max: 400},
-           						{ text: 'IE9+', max: 400},
-           						{ text: 'Safari', max: 400},
-           						{ text: 'Firefox', max: 400},
-           						{ text: 'Chrome', max: 400}
-        					]
-    					},
-    					series : (function (){
-        					var series = [];
-        					for (var i = 1; i <= 28; i++) {
-            				series.push({
-                				name:'浏览器（数据纯属虚构）',
-                				type: 'radar',
-                				symbol: 'none',
-                				lineStyle: {
-                   					width: 1
-                				},
-                				emphasis: {
+    				tooltip : {
+						trigger: 'axis',
+    				},
+    				toolbox: {
+       					show : true,
+        				feature : {
+            				//mark : {show: true},
+            				dataView : {show: true, readOnly: false},
+            				restore : {show: true},
+            				saveAsImage : {show: true}
+        				}
+   					},
+    				calculable : true,
+    				polar : [
+        				{
+            				indicator : [
+								{text:msg["conf"][4], max:max_num},
+								{text:msg["conf"][3], max:max_num},
+								{text:msg["conf"][1], max:max_num},
+								{text:msg["conf"][0], max:max_num},
+								{text:msg["conf"][2], max:max_num},
+								{text:msg["conf"][5], max:max_num},
+            				],
+            				radius : 180,
+        				}
+    				],
+    				series : [
+        				{
+            				name: 'Number of papers ---- Conference',
+           					type: 'radar',
+            				itemStyle: {
+                				normal: {
+									color: "rgba(0,120,240,0.8)",
                     				areaStyle: {
-                        				color: 'rgba(0,250,0,0.3)'
+                        			type: 'default'
+                    				}
+                				}
+            				},
+            				data : [
+                				{
+                    				value : [
+										parseInt(msg["num"][4]),
+										parseInt(msg["num"][3]),
+										parseInt(msg["num"][1]),
+										parseInt(msg["num"][0]),
+										parseInt(msg["num"][2]),
+										parseInt(msg["num"][5]),
+									],
+									label: {
+                        				normal: {
+                            				show: true,
+                            				formatter:function(params) {
+                                				return params.value;
+                           			 		}
+                        				}
                     				}
                 				},
-                				data:[
-                  					{
-                    					value:[
-                        					(40 - i) * 10,
-                        					(38 - i) * 4 + 60,
-                        					i * 5 + 10,
-                        					i * 9,
-                        					i * i /2
-                    					],
-                    					name: i + 2000 + ''
-                  					}
-                				]
-            				});
+            				]
         				}
-        				return series;
-    				})()
-				};
+    				]
+					};
+				var myChart = echarts.init(document.getElementById('image_div2'));
 				myChart.setOption(option);
 			}
 			</script>

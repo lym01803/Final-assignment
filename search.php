@@ -124,7 +124,7 @@
 			var authorname = paper["AuthorsName"];
 			for(var i = 0; i < authorname.length; i++){
 				var authorid = paper["AuthorsID"][i];
-				htmlstr += "<a href=\"/author.php?author_id=" + authorid + "\">" + authorname[i] + ";&nbsp;</a>";
+				htmlstr += "<a href=\"./author.php?authorid=" + authorid + "\">" + authorname[i] + ";&nbsp;</a>";
 			}
 			htmlstr += "</td><td>" + paper["ConferenceName"] + "</td></tr>";
 		}
@@ -177,6 +177,9 @@
 				}
 				$(this).css({cursor:type});
 			}
+			$("#searchinput").blur(function(){
+				this.value = global_value;
+			});
 		});
 		//$("[data-toggle='popover']").popover();//此句可删
 	});
@@ -349,14 +352,26 @@
 		var verified = 1;<?php //echo $verified; ?>;
 		global_field = "<?php if(array_key_exists("field", $_GET)){echo $_GET["field"];}else{echo "Paper_Author_Conference";} ?>";
 		global_value = "<?php if(array_key_exists("value", $_GET)){echo $_GET["value"];}else{echo "";}?>";
+		if(global_value == ""){
+			global_value = "Oh,empty!"
+		}
 		if(verified){
 			show_table();
 		}
 	</script>
 		<div class="row">
+			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="search_div">
+				<form class="form-inline" role="form" action="./search.php">
+					<input type="text" class="form-control" id="searchinput" name="value"></input>
+					<script>
+						document.getElementById("searchinput").value = global_value;
+					</script>
+				</form>
+			</div>
 			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="table_div">
 			</div>
-			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0.8);height:500px;">
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default">
+			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0);height:500px;border:0px;">
 			<script type="text/javascript">
 				$.ajax({
 					type: "POST",
@@ -451,7 +466,9 @@
 				}
 			</script>
 			</div>
-			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div2" style="background-color:rgba(255,255,255,0.8);height:500px;">
+			</div>
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default">
+			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="image_div2" style="background-color:rgba(255,255,255,0);height:500px;border:0px;">
 			<script>
 				$.ajax({
 					type: "POST",
@@ -471,6 +488,15 @@
 				});
 				function show_img2(msg){
 					var max_num = 0;
+					var order = Array(0,1,2,3,4,5);
+					for(var i = 0; i < 10; i++){
+						var p = parseInt(Math.random()*6), q = parseInt(Math.random()*6);
+						if(p < 6 && q < 6){
+							var t = order[p];
+							order[p] = order[q];
+							order[q] = t;
+						}
+					}
 					for(var i = 0; i < 6; i++){
 						if(parseInt(msg["num"][i]) + 3 > max_num){
 							max_num = parseInt(msg["num"][i]);
@@ -480,9 +506,12 @@
     					title : {
         					text: 'Number of papers ---- Conference',
     					},
-    				tooltip : {
-						trigger: 'axis',
-    				},
+					tooltip:{
+						trigger: "axis",
+						formatter: function(para){
+							return para[0].data;	//console.log(para)获取para详情
+						}
+					},
     				toolbox: {
        					show : true,
         				feature : {
@@ -496,12 +525,12 @@
     				polar : [
         				{
             				indicator : [
-								{text:msg["conf"][4], max:max_num},
-								{text:msg["conf"][3], max:max_num},
-								{text:msg["conf"][1], max:max_num},
-								{text:msg["conf"][0], max:max_num},
-								{text:msg["conf"][2], max:max_num},
-								{text:msg["conf"][5], max:max_num},
+								{text:msg["conf"][order[0]], max:max_num},
+								{text:msg["conf"][order[1]], max:max_num},
+								{text:msg["conf"][order[2]], max:max_num},
+								{text:msg["conf"][order[3]], max:max_num},
+								{text:msg["conf"][order[4]], max:max_num},
+								{text:msg["conf"][order[5]], max:max_num},
             				],
             				radius : 180,
         				}
@@ -521,12 +550,12 @@
             				data : [
                 				{
                     				value : [
-										parseInt(msg["num"][4]),
-										parseInt(msg["num"][3]),
-										parseInt(msg["num"][1]),
-										parseInt(msg["num"][0]),
-										parseInt(msg["num"][2]),
-										parseInt(msg["num"][5]),
+										parseInt(msg["num"][order[0]]),
+										parseInt(msg["num"][order[1]]),
+										parseInt(msg["num"][order[2]]),
+										parseInt(msg["num"][order[3]]),
+										parseInt(msg["num"][order[4]]),
+										parseInt(msg["num"][order[5]]),
 									],
 									label: {
                         				normal: {
@@ -545,6 +574,7 @@
 				myChart.setOption(option);
 			}
 			</script>
+			</div>
 			</div>
 		</div>
 </div>

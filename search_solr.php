@@ -11,7 +11,7 @@
     }else {
         $rows = 10;
     }
-    $str = urlencode($field.":".$value);
+    $str = urlencode(str_replace(' ','+',$field.":".$value));
     $ch = curl_init();
     $timeout = 10;
     $url = "http://acemap.lifanz.cn:8983/solr/ee101_core_1/select?indent=on&q=".$str."&rows=".$rows."&start=".$start."&wt=json";

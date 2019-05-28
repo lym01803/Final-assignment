@@ -124,7 +124,7 @@
 			var authorname = paper["AuthorsName"];
 			for(var i = 0; i < authorname.length; i++){
 				var authorid = paper["AuthorsID"][i];
-				htmlstr += "<a href=\"./author.php?authorid=" + authorid + "\">" + authorname[i] + ";&nbsp;</a>";
+				htmlstr += "<a target='_blank' href=\"./author.php?authorid=" + authorid + "\">" + authorname[i] + ";&nbsp;</a>";
 			}
 			htmlstr += "</td><td>" + paper["ConferenceName"] + "</td></tr>";
 		}

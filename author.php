@@ -7,7 +7,7 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
 	<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet" />
 	<script src="//libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
-	<script src="./js/echarts.min.js"></script>
+	<script src="./js/ex/echarts.js"></script>
 	<style>
 
 		/* http://css-tricks.com/perfect-full-page-background-image/ */
@@ -35,7 +35,7 @@
 
 		/* Override B3 .panel adding a subtly transparent background */
 		.panel {
-			background-color: rgba(255, 255, 255, 0.75);
+			background-color: rgba(255, 255, 255, 0.85);
 		}
 
 		.margin-base-vertical {
@@ -87,7 +87,7 @@
 		<?php
 				echo ucwords($row["AffiliationName"]);
 		?>
-				<span class="badge" align="right"><?php echo $row["cnt"]; ?></span>
+				<span class="badge" align="right" data-toggle="tooltip" data-placement="auto" title='Number of papers associated with this affiliation'><?php echo $row["cnt"]; ?></span>
 			</li>
 		<?php
 			}	
@@ -98,9 +98,12 @@
 			Paper : <br/>
 			<ul class="list-group">
 			<?php
+				$paper_num = 0;
 				$result = mysqli_query($link, "SELECT PaperID from paper_author_affiliation where AuthorID='$author_id'");
-				while($row = mysqli_fetch_array($result)){
+				$result = mysqli_fetch_all($result, MYSQLI_BOTH);
+				foreach($result as $row){
 					$paper_id = $row["PaperID"];
+					$paper_num += 1;
 					$paper_info = mysqli_fetch_array(mysqli_query($link, "SELECT Title from papers where PaperID='$paper_id'"));
 					$paper_title = $paper_info["Title"];
 					$paperlist[$paper_title] = array("ref" => 0);
@@ -123,8 +126,7 @@
 			</ul>
 		</div>
 		</div>
-		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="color:rgba(255, 255, 255, 0.75);">
-		<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" style="color:rgba(255, 255, 255, 0);height:500px;" id="image1">
+		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="height:500px;margin:0px;" id="image1">
 				<script>
 					var msg = <?php echo json_encode($paperlist); ?>;
 					//console.log(msg);
@@ -173,7 +175,7 @@
 						yeardata[i - min_year + 2] = i;
 					}
 					idx = 0;
-					console.log(msg);
+					//console.log(msg);
 					var Conf__ = Array();
 					var Year__ = Array();
 					for(var title in msg){
@@ -198,6 +200,14 @@
 						},
 						yAxis: {
 							data: confdata,
+							splitLine: {
+        						show: true,
+        						lineStyle:{
+           							color: ['rgba(60,60,60,0.5)'],
+           							width: 1,
+           							type: 'solid'
+      							}
+　　						}
 						},
 						series: [{
 							symbolSize: function(param, idx){
@@ -211,6 +221,74 @@
 					myChart.setOption(option);
 				</script>
 		</div>
+		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="margin:0px;" id="image2">
+		<script>
+			document.getElementById("image2").style="margin:0px;background-color:rgba(255,255,255,0.95);height:<?php echo $paper_num * 24 +440; ?>px;";
+			$.ajax({
+					type: "POST",
+					async: "false",
+					url: "./author_stat1.php",
+					dataType: "json",
+					data: {
+						"author_id": "<?php echo $author_id; ?>",
+						"author_name": "<?php echo $author_name; ?>",
+					},
+					success: function(msg) {
+						image2show(msg);
+					},
+					error: function(XMLHttpRequest, textStatus, errorThrown) {
+						alert("Error!" + XMLHttpRequest.status + XMLHttpRequest.readyState + textStatus);
+					}
+				});
+			function image2show(data){
+			var myChart = echarts.init(document.getElementById('image2'));
+			var option = {
+        		tooltip: {
+            		trigger: 'item',
+					triggerOn: 'mousemove',
+					formatter: function(param){
+						return param["data"]["name"];
+					}
+				},
+				title: {
+					text: "Author----------------Paper----------------Co-author",
+					subtext: "\"No.\" in 'Paper' column shows the paper's appearance order in the left column of this page\n\"No.\" in 'Co-author' column shows the author sequence",
+				},
+        		series: [
+            		{
+                		type: 'tree',
+                		data: [data],
+                		top: '15%',
+                		left: '15%',
+                		bottom: '5%',
+                		right: '25%',
+                		symbolSize: 7,
+                		label: {
+                    		normal: {
+                        		position: 'left',
+                        		verticalAlign: 'middle',
+                        		align: 'right',
+                        		fontSize: 10
+                    		}
+                		},
+               			leaves: {
+                    		label: {
+                       			normal: {
+                            		position: 'right',
+                            		verticalAlign: 'middle',
+                            		align: 'left'
+                        		}
+                    		}
+                		},
+						expandAndCollapse: true,
+                		animationDuration: 550,
+                		animationDurationUpdate: 750
+            		}
+        		]
+    		};
+			myChart.setOption(option);
+		}
+		</script>
 		</div>
 	</div>
 </body>

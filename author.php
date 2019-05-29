@@ -8,6 +8,7 @@
 	<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet" />
 	<script src="//libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
 	<script src="./js/ex/echarts.js"></script>
+	<script src="./js/ex/echarts-wordcloud.min.js"></script>
 	<style>
 
 		/* http://css-tricks.com/perfect-full-page-background-image/ */
@@ -61,10 +62,10 @@
 <body>
 	<div class="container">
 		<div class="row">
-		<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" style="height:40px;font-size:25px;">
+		<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" style="height:40px;font-size:25px;margin-bottom:2px;">
 			Author Page
 		</div>
-		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default " style="padding:8px;font-size:18px;">
+		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default " style="padding:8px;font-size:18px;" id="left-col">
 		<?php	
 			$paperlist = array();
 			$author_id=$_GET["authorid"];
@@ -101,23 +102,24 @@
 				$paper_num = 0;
 				$result = mysqli_query($link,"SELECT e.PaperID as PaperID, e.Title as Title, e.PaperPublishYear as Year, e.refcount as cnt, f.ConferenceName as conf from (SELECT c.PaperID , c.Title, c.ConferenceID, c.PaperPublishYear, d.refcount from ((SELECT a.* from (papers a inner join paper_author_affiliation b on a.PaperID = b.PaperID) where b.AuthorID = '$author_id') c inner join paper_count d on c.PaperID = d.PaperID)) e inner join conferences f on e.ConferenceID = f.ConferenceID");
 				//$result = mysqli_query($link, "SELECT PaperID from paper_author_affiliation where AuthorID='$author_id'");
-				$result = mysqli_fetch_all($result, MYSQLI_BOTH);
-				foreach($result as $row){
+				$result_global = mysqli_fetch_all($result, MYSQLI_BOTH);
+				foreach($result_global as $row){
 					$paper_id = $row["PaperID"];
 					$paper_num += 1;
 					//$paper_info = mysqli_fetch_array(mysqli_query($link, "SELECT Title from papers where PaperID='$paper_id'"));
 					$paper_title = $row["Title"];
 					$paperlist[$paper_title] = array("ref" => 0);
 					echo "<li class='list-group-item' align='left' style='padding:8px;'>";
-					echo "<a target='_blank' href='./search.php?field=PaperName&value=".$paper_title."'>".$paper_title."</a>";
+					echo "<span><a target='_blank' href='./search.php?field=PaperName&value=".$paper_title."'>".$paper_title."</a>";
 					//$tmp_search = mysqli_query($link, "SELECT count(*) as cnt from paper_reference where ReferenceID = '$paper_id'");
 					//$tmp_search = mysqli_fetch_array($tmp_search);
 					$ref_num = (int)$row["cnt"];
 					$paperlist[$paper_title]["ref"] = $ref_num;
 					if($ref_num){
-						echo "<span class='badge pull-right' data-toggle='tooltip' data-placement='auto' data-html='true' title='Numbers of references'>$ref_num</span>";
+						//echo "<span class='badge pull-right' data-toggle='tooltip' data-placement='auto' data-html='true' title='Numbers of references'>$ref_num</span>";
+						echo "<label class='pull-right' style='font-size:12px;' title='number of references'>$ref_num</label>";
 					}
-					echo "</li>";
+					echo "</span></li>";
 					//$year = mysqli_fetch_array(mysqli_query($link, "SELECT PaperPublishYear as year, ConferenceID from papers where papers.PaperID = '$paper_id'"));
 					$paperlist[$paper_title]["year"] = (int)$row["Year"];
 					//$confid = $row["ConferenceID"];
@@ -200,6 +202,7 @@
 							data: yeardata,
 						},
 						yAxis: {
+							boundaryGap: true,
 							data: confdata,
 							splitLine: {
         						show: true,
@@ -224,7 +227,7 @@
 		</div>
 		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="margin:0px;" id="image2">
 		<script>
-			document.getElementById("image2").style="margin:0px;background-color:rgba(255,255,255,0.95);height:<?php echo $paper_num * 24 +440; ?>px;";
+			document.getElementById("image2").style="margin:0px;background-color:rgba(255,255,255,0.95);height:<?php echo $paper_num * 35+400; ?>px;";
 			$.ajax({
 					type: "POST",
 					async: "false",
@@ -259,9 +262,9 @@
             		{
                 		type: 'tree',
                 		data: [data],
-                		top: '12%',
+                		top: '60px',
                 		left: '15%',
-                		bottom: '8%',
+                		bottom: '15px',
                 		right: '25%',
                 		symbolSize: 7,
                 		label: {
@@ -291,7 +294,75 @@
 		}
 		</script>
 		</div>
+		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="height:500px;margin:0px;" id="image3">
+		<?php 
+				$wdcnt = array();
+				foreach($result_global as $row){
+					$p_title = $row["Title"];
+					$p_array = explode(" ", $p_title);
+					foreach($p_array as $word){
+						if(array_key_exists($word, $wdcnt)){
+							$wdcnt[$word] += 1;
+						}else {
+							$wdcnt[$word] = (int)1;
+						}
+					}
+				}
+				$retval = array();
+				foreach($wdcnt as $k=>$v){
+					if(strlen($k) < 3){
+						$v = (int)($v / 2);
+					}
+					$retval[] = array("name"=>$k, "value"=>$v);
+				}
+				$retval = json_encode($retval);
+				echo "<script>var word_cloud_data = $retval;</script>";
+		?>
+		<script>
+			var option = {
+				series: [
+    				{
+   						type: 'wordCloud',
+        				sizeRange: [10, 60],
+        				rotationRange: [-90, 90],
+						right: '5%',
+        				textStyle: {
+            				normal: {
+                				color: function () {
+									while(1){
+										//console.log("try");
+										var a = Math.random()*255, b = Math.random()*255, c = Math.random()*255;
+										if(a + b + c < 600 && a + b + c > 200 && (a - b) * (a - b) + (b - c) * (b - c) + (c - a)*(c - a) > 20000){
+                    						return 'rgb(' + [
+                            					Math.round(Math.random() * 255),
+                            					Math.round(Math.random() * 255),
+                            					Math.round(Math.random() * 255)
+												].join(',') + ')';
+										}
+									}
+                				}
+            				},
+            				emphasis: {
+                				shadowBlur: 10,
+                				shadowColor: '#333'
+            				}
+        				},
+        				data: word_cloud_data,
+    				}
+    			]
+			};
+			var myChart = echarts.init(document.getElementById('image3'));
+			myChart.setOption(option);
+		</script>
+		</div>
 	</div>
+	<script>
+		var ht = 1400 + 35 * <?php echo $paper_num; ?>;
+		if($("#left-col").height() < ht){
+			$("#left-col").height(ht);
+			//console.log($("#left-col").height());
+		}
+	</script>
 </body>
 
 </html>

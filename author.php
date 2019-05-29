@@ -99,28 +99,29 @@
 			<ul class="list-group">
 			<?php
 				$paper_num = 0;
-				$result = mysqli_query($link, "SELECT PaperID from paper_author_affiliation where AuthorID='$author_id'");
+				$result = mysqli_query($link,"SELECT e.PaperID as PaperID, e.Title as Title, e.PaperPublishYear as Year, e.refcount as cnt, f.ConferenceName as conf from (SELECT c.PaperID , c.Title, c.ConferenceID, c.PaperPublishYear, d.refcount from ((SELECT a.* from (papers a inner join paper_author_affiliation b on a.PaperID = b.PaperID) where b.AuthorID = '$author_id') c inner join paper_count d on c.PaperID = d.PaperID)) e inner join conferences f on e.ConferenceID = f.ConferenceID");
+				//$result = mysqli_query($link, "SELECT PaperID from paper_author_affiliation where AuthorID='$author_id'");
 				$result = mysqli_fetch_all($result, MYSQLI_BOTH);
 				foreach($result as $row){
 					$paper_id = $row["PaperID"];
 					$paper_num += 1;
-					$paper_info = mysqli_fetch_array(mysqli_query($link, "SELECT Title from papers where PaperID='$paper_id'"));
-					$paper_title = $paper_info["Title"];
+					//$paper_info = mysqli_fetch_array(mysqli_query($link, "SELECT Title from papers where PaperID='$paper_id'"));
+					$paper_title = $row["Title"];
 					$paperlist[$paper_title] = array("ref" => 0);
 					echo "<li class='list-group-item' align='left' style='padding:8px;'>";
 					echo "<a target='_blank' href='./search.php?field=PaperName&value=".$paper_title."'>".$paper_title."</a>";
-					$tmp_search = mysqli_query($link, "SELECT count(*) as cnt from paper_reference where ReferenceID = '$paper_id'");
-					$tmp_search = mysqli_fetch_array($tmp_search);
-					$ref_num = (int)$tmp_search["cnt"];
+					//$tmp_search = mysqli_query($link, "SELECT count(*) as cnt from paper_reference where ReferenceID = '$paper_id'");
+					//$tmp_search = mysqli_fetch_array($tmp_search);
+					$ref_num = (int)$row["cnt"];
 					$paperlist[$paper_title]["ref"] = $ref_num;
 					if($ref_num){
 						echo "<span class='badge pull-right' data-toggle='tooltip' data-placement='auto' data-html='true' title='Numbers of references'>$ref_num</span>";
 					}
 					echo "</li>";
-					$year = mysqli_fetch_array(mysqli_query($link, "SELECT PaperPublishYear as year, ConferenceID from papers where papers.PaperID = '$paper_id'"));
-					$paperlist[$paper_title]["year"] = (int)$year["year"];
-					$confid = $year["ConferenceID"];
-					$paperlist[$paper_title]["conf"] = mysqli_fetch_array(mysqli_query($link, "SELECT ConferenceName from conferences where ConferenceID = '$confid'"))["ConferenceName"];
+					//$year = mysqli_fetch_array(mysqli_query($link, "SELECT PaperPublishYear as year, ConferenceID from papers where papers.PaperID = '$paper_id'"));
+					$paperlist[$paper_title]["year"] = (int)$row["Year"];
+					//$confid = $row["ConferenceID"];
+					$paperlist[$paper_title]["conf"] = $row["conf"];
 				}
 			?>
 			</ul>
@@ -258,9 +259,9 @@
             		{
                 		type: 'tree',
                 		data: [data],
-                		top: '15%',
+                		top: '12%',
                 		left: '15%',
-                		bottom: '5%',
+                		bottom: '8%',
                 		right: '25%',
                 		symbolSize: 7,
                 		label: {

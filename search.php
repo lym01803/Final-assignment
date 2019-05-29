@@ -8,7 +8,7 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet"/>
 	<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet" />
 	<script src="//netdna.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-	<script src="./js/echarts.min.js"></script>
+	<script src="./js/ex/echarts.js"></script>
 	<style>
 
 		/* http://css-tricks.com/perfect-full-page-background-image/ */
@@ -370,8 +370,7 @@
 			</div>
 			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="table_div">
 			</div>
-			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default">
-			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0);height:500px;border:0px;">
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div" style="background-color:rgba(255,255,255,0.9);height:500px;border:0px;">
 			<script type="text/javascript">
 				$.ajax({
 					type: "POST",
@@ -414,12 +413,13 @@
             					restore : {show: true},
             					saveAsImage : {show: true}
         					}
-    					},
+						},
+						tooltip: {
+							formatter: function(param){
+								return param["data"][0];
+							}
+						},
     					calculable : true,
-   	 					tooltip : {
-        					trigger: 'axis',
-        					formatter: "Year : {b}<br/>Number : {c}",
-    					},
     					xAxis : [
 							{
             					type : 'value',
@@ -466,14 +466,12 @@
 				}
 			</script>
 			</div>
-			</div>
-			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default">
-			<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" id="image_div2" style="background-color:rgba(255,255,255,0);height:500px;border:0px;">
+			<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" id="image_div2" style="background-color:rgba(255,255,255,0.9);height:500px;border:0px;">
 			<script>
 				$.ajax({
 					type: "POST",
 					async: "false",
-					url: "search_stat2.php",
+					url: "./search_stat2.php",
 					dataType: "json",
 					data: {
 						"field":global_field,

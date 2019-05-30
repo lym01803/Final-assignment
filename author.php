@@ -58,8 +58,11 @@
 	</style>
 
 </head>
-
 <body>
+	<?php
+		include 'english.php';
+		use Wamania\Snowball\english; 
+	?>
 	<div class="container">
 		<div class="row">
 		<div class="col-md-12 col-xs-12 col-sm-12 panel panel-default" style="height:40px;font-size:25px;margin-bottom:2px;">
@@ -127,9 +130,26 @@
 				}
 			?>
 			</ul>
+			<script>
+				function dealwithlabelclick(){
+					$("#moreauthors").slideToggle("fast");
+				}
+			</script>
+			<label class="btn" onclick="dealwithlabelclick()" style="padding:2px;font-size:20px;">
+				<em>more associated authors</em>
+			</label>
+			<div id="moreauthors">
+				<?php
+					echo "<ul class='pull-left'>";
+					$result = mysqli_query($link, "SELECT g.AuthorID as authorid, h.AuthorName as authorname FROM (SELECT e.AuthorID, f.Score FROM (SELECT c.AuthorID FROM ((SELECT a.AffiliationID FROM paper_author_affiliation a where a.AuthorID = '$author_id' and NOT a.AffiliationID = 'None' group by AffiliationID) b inner join paper_author_affiliation c on b.AffiliationID = c.AffiliationID) group by AuthorID) e inner join author_score f on e.AuthorID = f.AuthorID) g inner join authors h on g.AuthorID = h.AuthorID where NOT g.AuthorID = '$author_id' order by g.Score desc limit 0, 10");
+					while($row = mysqli_fetch_array($result)){
+						echo "<li><a href='./author.php?authorid=".$row['authorid']."'>".$row['authorname']."</a></li>";
+					}				
+				?>
+			</div>
 		</div>
 		</div>
-		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="height:500px;margin:0px;" id="image1">
+		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="height:500px;margin:0px;background-color:rgba(255,255,255,0.95);" id="image1">
 				<script>
 					var msg = <?php echo json_encode($paperlist); ?>;
 					//console.log(msg);
@@ -294,26 +314,34 @@
 		}
 		</script>
 		</div>
-		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="height:500px;margin:0px;" id="image3">
+		<div class="col-md-6 col-xs-6 col-sm-6 panel panel-default" style="height:500px;margin:0px;background-color:rgba(255,255,255,0.95);" id="image3">
 		<?php 
+				$wordorigin = array();
 				$wdcnt = array();
+				$stemmer = new English();
 				foreach($result_global as $row){
 					$p_title = $row["Title"];
 					$p_array = explode(" ", $p_title);
 					foreach($p_array as $word){
-						if(array_key_exists($word, $wdcnt)){
-							$wdcnt[$word] += 1;
+						$wdrt = $stemmer->stem($word);
+						if(array_key_exists($wdrt, $wdcnt)){
+							$wdcnt[$wdrt] += 1;
+							if(strlen($word) < strlen($wordorigin[$wdrt])){
+								$wordorigin[$wdrt] = $word;
+							}
 						}else {
-							$wdcnt[$word] = (int)1;
+							$wordorigin[$wdrt] = $word;
+							$wdcnt[$wdrt] = (int)1;
 						}
 					}
 				}
 				$retval = array();
+				$banlist = json_decode(file_get_contents("./banbanban.json"));
 				foreach($wdcnt as $k=>$v){
-					if(strlen($k) < 3){
-						$v = (int)($v / 2);
+					if(array_key_exists($k, $banlist)){
+						$v = 1;
 					}
-					$retval[] = array("name"=>$k, "value"=>$v);
+					$retval[] = array("name"=>$wordorigin[$k], "value"=>$v);
 				}
 				$retval = json_encode($retval);
 				echo "<script>var word_cloud_data = $retval;</script>";
